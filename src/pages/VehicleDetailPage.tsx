@@ -195,8 +195,8 @@ function CostCalculator({ vehicle }: { vehicle: NonNullable<Awaited<ReturnType<t
   const [months, setMonths] = useState(60);
   const [monthlyKm, setMonthlyKm] = useState(800);
   const [kmRaw, setKmRaw] = useState("800");
-  const [fuelPrice, setFuelPrice] = useState(3900);
-  const [fuelRaw, setFuelRaw] = useState("3.900");
+  const [fuelPrice, setFuelPrice] = useState(14000);
+  const [fuelRaw, setFuelRaw] = useState("14.000");
   const [insurance, setInsurance] = useState(200000);
   const [insuranceRaw, setInsuranceRaw] = useState("200.000");
 
@@ -207,7 +207,7 @@ function CostCalculator({ vehicle }: { vehicle: NonNullable<Awaited<ReturnType<t
         annualRatePercent: annualRate,
         months,
         monthlyKm,
-        fuelPricePerLiter: fuelPrice,
+        fuelPricePerGallon: fuelPrice,
         insuranceMonthly: insurance,
       }),
     [vehicle, downPercent, annualRate, months, monthlyKm, fuelPrice, insurance],
@@ -284,7 +284,7 @@ function CostCalculator({ vehicle }: { vehicle: NonNullable<Awaited<ReturnType<t
                 }}
               />
             </Field>
-            <Field label="Precio por litro (ingresado)" htmlFor="calc-fuel">
+            <Field label="Precio por galón (ingresado)" htmlFor="calc-fuel">
               <input
                 id="calc-fuel"
                 type="text"

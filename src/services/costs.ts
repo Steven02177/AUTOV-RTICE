@@ -10,8 +10,8 @@ export interface CostInput {
   months: number;
   /** Kilómetros que recorre al mes. */
   monthlyKm: number;
-  /** Precio por litro de combustible que el usuario cotizó. */
-  fuelPricePerLiter: number;
+  /** Precio por galón de combustible que el usuario cotizó (costumbre en Colombia). */
+  fuelPricePerGallon: number;
   /** Costo mensual de seguro cotizado por el usuario. */
   insuranceMonthly: number;
 }
@@ -28,6 +28,9 @@ export interface CostEstimate {
   monthlyTotal?: number;
   notes: string[];
 }
+
+/** Litros en un galón (galón estadounidense, el de uso común en Colombia). */
+const LITERS_PER_GALLON = 3.78541;
 
 /** Km por litro estimados cuando el anuncio no informa consumo. */
 function estimatedKmPerLiter(vehicle: Vehicle): number | undefined {
@@ -70,8 +73,12 @@ export function estimateCosts(vehicle: Vehicle, input: CostInput): CostEstimate 
 
   const kmPerLiter = estimatedKmPerLiter(vehicle);
   let fuelMonthly: number | undefined;
-  if (kmPerLiter && input.fuelPricePerLiter > 0) {
-    fuelMonthly = Math.round((input.monthlyKm / kmPerLiter) * input.fuelPricePerLiter);
+  if (kmPerLiter && input.fuelPricePerGallon > 0) {
+    // El consumo se declara en km/l, pero en Colombia el combustible se cotiza
+    // por galón: se convierten los litros mensuales a galones (1 gal = 3,78541 L).
+    const litersPerMonth = input.monthlyKm / kmPerLiter;
+    const gallonsPerMonth = litersPerMonth / LITERS_PER_GALLON;
+    fuelMonthly = Math.round(gallonsPerMonth * input.fuelPricePerGallon);
     if (!vehicle.specs.fuelConsumption) {
       notes.push("El consumo usado en el cálculo es una estimación por cilindraje: el anuncio no informa consumo declarado.");
     }

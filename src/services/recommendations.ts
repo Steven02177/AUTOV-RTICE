@@ -194,8 +194,19 @@ function scoreVehicle(vehicle: Vehicle, answers: RecommendationAnswer): Scored {
 }
 
 function collectLimitingFactors(answers: RecommendationAnswer, pool: Vehicle[], matched: number): string[] {
-  if (matched >= 3 || pool.length === 0) return [];
+  if (matched >= 3) return [];
   const factors: string[] = [];
+  // Universo vacío tras el filtro duro de tipo: hay que decirlo de forma explícita.
+  if (pool.length === 0) {
+    if (answers.vehicleType) {
+      factors.push(
+        `no hay ${answers.vehicleType === "carro" ? "carros" : "motos"} publicados en el catálogo que cumplan tus criterios`,
+      );
+    } else {
+      factors.push("no hay vehículos publicados que cumplan tus criterios");
+    }
+    return factors;
+  }
   const budget = answers.budget;
   const passengers = answers.passengers;
   if (budget !== undefined) {
@@ -240,8 +251,13 @@ export function recommend(
   limit = 3,
 ): RecommendationResult {
   const eligible = pool.filter((vehicle) => vehicle.listingStatus === "publicado");
+  // El tipo de vehículo es un filtro duro: si el usuario pidió carro, jamás se
+  // recomienda una moto (y viceversa), aunque puntúe bien en otros criterios.
+  const universe = answers.vehicleType
+    ? eligible.filter((vehicle) => vehicle.vehicleType === answers.vehicleType)
+    : eligible;
 
-  const scored = eligible
+  const scored = universe
     .map((vehicle) => ({ vehicle, ...scoreVehicle(vehicle, answers) }))
     .filter((entry) => entry.score > 0)
     .sort((a, b) => b.score - a.score || a.vehicle.price - b.vehicle.price);
@@ -257,9 +273,10 @@ export function recommend(
   }));
 
   const budget = answers.budget;
+  // Las alternativas por presupuesto también respetan el tipo pedido.
   const budgetAlternatives =
     budget !== undefined
-      ? eligible
+      ? universe
           .filter((vehicle) => vehicle.price > budget)
           .sort((a, b) => a.price - b.price)
           .slice(0, 3)
@@ -267,7 +284,7 @@ export function recommend(
 
   return {
     results,
-    limitingFactors: collectLimitingFactors(answers, eligible, results.length),
+    limitingFactors: collectLimitingFactors(answers, universe, results.length),
     budgetAlternatives:
       results.length >= limit ? [] : budgetAlternatives,
     scoredCount: scored.length,
